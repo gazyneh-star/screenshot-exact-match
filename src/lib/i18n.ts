@@ -1,4 +1,19 @@
 const en = {
+  signIn: "Sign in",
+  signUp: "Create account",
+  email: "Email",
+  password: "Password",
+  signOut: "Sign out",
+  noAccount: "No account? Create one",
+  haveAccount: "Have an account? Sign in",
+  checkEmail: "Check your email to confirm your account.",
+  openChat: "Open Elvyn",
+  providersStatus: "AI providers (owner only)",
+  connectedL: "Configured",
+  notConfigured: "Not configured",
+  aiError: "Couldn't get an answer",
+  tagline: "A calm, premium AI assistant.",
+
   greeting: "Hi! What's on your mind?",
   placeholder: "Ask Elvyn…",
   newChat: "New chat",
@@ -36,6 +51,21 @@ const en = {
 };
 type D = typeof en;
 const ru: D = {
+  signIn: "Войти",
+  signUp: "Создать аккаунт",
+  email: "Эл. почта",
+  password: "Пароль",
+  signOut: "Выйти",
+  noAccount: "Нет аккаунта? Создать",
+  haveAccount: "Уже есть аккаунт? Войти",
+  checkEmail: "Проверьте почту, чтобы подтвердить аккаунт.",
+  openChat: "Открыть Elvyn",
+  providersStatus: "AI-провайдеры (только владелец)",
+  connectedL: "Настроен",
+  notConfigured: "Не настроен",
+  aiError: "Не удалось получить ответ",
+  tagline: "Спокойный премиальный AI-ассистент.",
+
   greeting: "Привет! Что вас интересует?",
   placeholder: "Спросите Elvyn…",
   newChat: "Новый чат",
@@ -72,6 +102,21 @@ const ru: D = {
   close: "Закрыть",
 };
 const ar: D = {
+  signIn: "تسجيل الدخول",
+  signUp: "إنشاء حساب",
+  email: "البريد الإلكتروني",
+  password: "كلمة المرور",
+  signOut: "تسجيل الخروج",
+  noAccount: "ليس لديك حساب؟ أنشئ واحدًا",
+  haveAccount: "لديك حساب؟ سجّل الدخول",
+  checkEmail: "تحقق من بريدك لتأكيد حسابك.",
+  openChat: "افتح Elvyn",
+  providersStatus: "مزودو الذكاء الاصطناعي (للمالك فقط)",
+  connectedL: "مُعدّ",
+  notConfigured: "غير مُعدّ",
+  aiError: "تعذّر الحصول على إجابة",
+  tagline: "مساعد ذكاء اصطناعي هادئ وراقٍ.",
+
   greeting: "مرحبًا! بماذا تفكر؟",
   placeholder: "اسأل Elvyn…",
   newChat: "محادثة جديدة",
