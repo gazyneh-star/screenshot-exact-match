@@ -1,9 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { dict, type Lang } from "./i18n";
 
 export type Theme = "dark" | "light" | "system";
-export type Msg = { id: string; role: "user" | "assistant"; content: string };
-export type Conversation = { id: string; title: string; updatedAt: number; messages: Msg[] };
+export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null };
+export type Conversation = { id: string; title: string; updatedAt: number };
 
 type Store = {
   lang: Lang;
@@ -13,31 +15,48 @@ type Store = {
   t: (typeof dict)["en"];
   model: string;
   setModel: (m: string) => void;
+  user: User | null;
   conversations: Conversation[];
-  activeId: string | null;
-  setActiveId: (id: string | null) => void;
-  send: (text: string) => void;
-  rename: (id: string, title: string) => void;
-  remove: (id: string) => void;
+  refresh: () => Promise<void>;
+  rename: (id: string, title: string) => Promise<void>;
+  remove: (id: string) => Promise<void>;
 };
 
 const Ctx = createContext<Store | null>(null);
-const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangS] = useState<Lang>("ru");
   const [theme, setThemeS] = useState<Theme>("dark");
   const [model, setModel] = useState("auto");
+  const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // UI preferences only (not private data) are kept in the browser.
   useEffect(() => {
     const l = localStorage.getItem("elvyn.lang") as Lang | null;
     const th = localStorage.getItem("elvyn.theme") as Theme | null;
     if (l && l in dict) setLangS(l);
     if (th) setThemeS(th);
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
+
+  const refresh = useCallback(async () => {
+    if (!user) return setConversations([]);
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id,title,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    if (error) return console.error(error);
+    setConversations((data ?? []).map((c) => ({ id: c.id, title: c.title, updatedAt: Date.parse(c.updated_at) })));
+  }, [user]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -56,22 +75,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
 
-  const t = dict[lang];
-
-  const send = (text: string) => {
-    const user: Msg = { id: uid(), role: "user", content: text };
-    const reply: Msg = { id: uid(), role: "assistant", content: t.notConnected };
-    if (!activeId) {
-      const c: Conversation = { id: uid(), title: text.slice(0, 48), updatedAt: Date.now(), messages: [user, reply] };
-      setConversations((cs) => [c, ...cs]);
-      setActiveId(c.id);
-    } else {
-      setConversations((cs) =>
-        cs.map((c) => (c.id === activeId ? { ...c, updatedAt: Date.now(), messages: [...c.messages, user, reply] } : c)),
-      );
-    }
-  };
-
   return (
     <Ctx.Provider
       value={{
@@ -79,17 +82,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLang: (l) => { setLangS(l); localStorage.setItem("elvyn.lang", l); },
         theme,
         setTheme: (th) => { setThemeS(th); localStorage.setItem("elvyn.theme", th); },
-        t,
+        t: dict[lang],
         model,
         setModel,
+        user,
         conversations,
-        activeId,
-        setActiveId,
-        send,
-        rename: (id, title) => setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title } : c))),
-        remove: (id) => {
+        refresh,
+        rename: async (id, title) => {
+          setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title } : c)));
+          const { error } = await supabase.from("conversations").update({ title }).eq("id", id);
+          if (error) console.error(error);
+        },
+        remove: async (id) => {
           setConversations((cs) => cs.filter((c) => c.id !== id));
-          if (activeId === id) setActiveId(null);
+          const { error } = await supabase.from("conversations").delete().eq("id", id);
+          if (error) console.error(error);
         },
       }}
     >
