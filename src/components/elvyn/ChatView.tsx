@@ -28,8 +28,8 @@ export function ChatView({ id }: { id?: string }) {
       .eq("conversation_id", id)
       .order("created_at")
       .then(({ data, error }) => {
-        if (error) return toast.error(error.message);
-        setMessages((data ?? []) as Msg[]);
+        if (error) toast.error(error.message);
+        else setMessages((data ?? []) as Msg[]);
       });
   }, [id]);
 
@@ -38,7 +38,7 @@ export function ChatView({ id }: { id?: string }) {
   const send = async (text: string) => {
     if (busy) return;
     setBusy(true);
-    let convId = id;
+    let convId: string | undefined = id;
     try {
       if (!convId) {
         const { data, error } = await supabase.from("conversations").insert({ title: text.slice(0, 60) }).select("id").single();
@@ -47,11 +47,12 @@ export function ChatView({ id }: { id?: string }) {
         skipLoad.current = convId;
         navigate({ to: "/chat/$id", params: { id: convId } });
       }
+      const cid: string = convId!;
       const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content: text };
       const history = [...messages, userMsg];
       const draftId = crypto.randomUUID();
       setMessages([...history, { id: draftId, role: "assistant", content: "" }]);
-      const { error: e1 } = await supabase.from("messages").insert({ conversation_id: convId, role: "user", content: text });
+      const { error: e1 } = await supabase.from("messages").insert({ conversation_id: cid, role: "user", content: text });
       if (e1) throw e1;
 
       const { data: s } = await supabase.auth.getSession();
@@ -72,9 +73,9 @@ export function ChatView({ id }: { id?: string }) {
         full += dec.decode(value, { stream: true });
         setMessages((ms) => ms.map((m) => (m.id === draftId ? { ...m, content: full, provider } : m)));
       }
-      const { error: e2 } = await supabase.from("messages").insert({ conversation_id: convId, role: "assistant", content: full, provider, model });
+      const { error: e2 } = await supabase.from("messages").insert({ conversation_id: cid, role: "assistant", content: full, provider, model });
       if (e2) throw e2;
-      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", cid);
       void refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : t.aiError;
@@ -87,7 +88,7 @@ export function ChatView({ id }: { id?: string }) {
 
   return (
     <div className="flex h-dvh w-full overflow-hidden">
-      <Sidebar open={open} onClose={() => setOpen(false)} activeId={id} />
+      <Sidebar open={open} onClose={() => setOpen(false)} {...(id ? { activeId: id } : {})} />
       <main className="canvas-glow relative flex min-w-0 flex-1 flex-col">
         <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 pt-4">
           <button aria-label="Menu" onClick={() => setOpen(true)} className="pill grid h-12 w-12 place-items-center lg:invisible">
