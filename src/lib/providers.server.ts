@@ -17,8 +17,8 @@ const list = (k: string) => env(k).split(/[,\n]/).map((s) => s.trim()).filter(Bo
 export function getProviders(): Provider[] {
   const cfAcct = env("CLOUDFLARE_ACCOUNT_ID");
   const all: Provider[] = [
-    { id: "gemini", name: "Google Gemini", keys: list("GEMINI_KEYS"), model: env("GEMINI_MODEL") || "gemini-2.5-flash", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" },
-    { id: "groq", name: "Groq", keys: list("GROQ_KEYS"), model: env("GROQ_MODEL") || "llama-3.3-70b-versatile", baseUrl: "https://api.groq.com/openai/v1" },
+    { id: "gemini", name: "Google Gemini", keys: list("GEMINI_KEYS"), model: env("GEMINI_MODEL") || "gemini-3.5-flash", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" },
+    { id: "groq", name: "Groq", keys: list("GROQ_KEYS"), model: env("GROQ_MODEL") || "openai/gpt-oss-120b", baseUrl: "https://api.groq.com/openai/v1" },
     { id: "sambanova", name: "SambaNova", keys: list("SAMBANOVA_KEYS"), model: env("SAMBANOVA_MODEL") || "Meta-Llama-3.3-70B-Instruct", baseUrl: env("SAMBANOVA_BASE_URL") || "https://api.sambanova.ai/v1" },
     { id: "cloudflare", name: "Cloudflare Workers AI", keys: cfAcct ? list("CLOUDFLARE_API_TOKEN") : [], model: env("CLOUDFLARE_MODEL") || "@cf/meta/llama-3.1-8b-instruct", baseUrl: `https://api.cloudflare.com/client/v4/accounts/${cfAcct}/ai/v1` },
     { id: "together", name: "Together AI", keys: list("TOGETHER_KEYS"), model: env("TOGETHER_MODEL") || "meta-llama/Llama-3.3-70B-Instruct-Turbo", baseUrl: env("TOGETHER_BASE_URL") || "https://api.together.xyz/v1" },
