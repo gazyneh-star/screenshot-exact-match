@@ -5,16 +5,16 @@ import { useApp } from "@/lib/app-store";
 import { ElvynLogo } from "./Logo";
 import { cn } from "@/lib/utils";
 
-export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t, conversations, activeId, setActiveId, rename, remove } = useApp();
+export function Sidebar({ open, onClose, activeId }: { open: boolean; onClose: () => void; activeId?: string }) {
+  const { t, conversations, rename, remove } = useApp();
   const [q, setQ] = useState("");
   const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
   const list = conversations.filter((c) => c.title.toLowerCase().includes(q.toLowerCase()));
 
   const go = (id: string | null) => {
-    setActiveId(id);
-    navigate({ to: "/" });
+    if (id) navigate({ to: "/chat/$id", params: { id } });
+    else navigate({ to: "/chat" });
     onClose();
   };
 
@@ -74,7 +74,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                 aria-label={t.rename}
                 onClick={() => {
                   const n = prompt(t.rename, c.title);
-                  if (n?.trim()) rename(c.id, n.trim());
+                  if (n?.trim()) void rename(c.id, n.trim());
                 }}
                 className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:text-foreground"
               >
@@ -82,7 +82,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
               </button>
               <button
                 aria-label={t.delete}
-                onClick={() => remove(c.id)}
+                onClick={() => { void remove(c.id); if (c.id === activeId) go(null); }}
                 className="shrink-0 rounded-full p-1.5 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
               >
                 <Trash2 className="h-4 w-4" />

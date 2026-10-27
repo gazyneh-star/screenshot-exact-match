@@ -5,7 +5,7 @@ import { useApp, type Theme } from "@/lib/app-store";
 import { langNames, type Lang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Elvyn" },

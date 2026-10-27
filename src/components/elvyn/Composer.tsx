@@ -4,16 +4,16 @@ import { toast } from "sonner";
 import { useApp } from "@/lib/app-store";
 import { cn } from "@/lib/utils";
 
-export function Composer() {
-  const { t, send } = useApp();
+export function Composer({ onSend, busy }: { onSend: (text: string) => void; busy?: boolean }) {
+  const { t } = useApp();
   const [text, setText] = useState("");
   const [sheet, setSheet] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
 
   const submit = () => {
     const v = text.trim();
-    if (!v) return;
-    send(v);
+    if (!v || busy) return;
+    onSend(v);
     setText("");
     ref.current?.focus();
   };
@@ -89,7 +89,7 @@ export function Composer() {
         <button
           aria-label="Send"
           onClick={submit}
-          disabled={!text.trim()}
+          disabled={!text.trim() || busy}
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand text-brand-foreground transition-opacity disabled:opacity-40"
         >
           <ArrowUp className="h-5 w-5" />
