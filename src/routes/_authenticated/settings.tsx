@@ -1,4 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { getProviderStatus } from "@/lib/admin.functions";
 import { X, UserCircle, Shield, Cpu, BarChart3, ChevronRight, Moon, Sun, Monitor, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useApp, type Theme } from "@/lib/app-store";
@@ -39,7 +44,17 @@ function Row({ icon: Icon, label, onClick, right }: { icon?: typeof X; label: st
 }
 
 function SettingsPage() {
-  const { t, theme, setTheme, lang, setLang } = useApp();
+  const { t, theme, setTheme, lang, setLang, user } = useApp();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fetchStatus = useServerFn(getProviderStatus);
+  const status = useQuery({ queryKey: ["provider-status"], queryFn: () => fetchStatus() });
+  const signOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
   const later = () => toast(t.soon);
   const themes: [Theme, typeof Moon, string][] = [
     ["dark", Moon, t.dark],
@@ -50,17 +65,17 @@ function SettingsPage() {
     <div className="min-h-dvh bg-background">
       <div className="mx-auto max-w-xl px-4 pb-12 pt-4">
         <header className="grid grid-cols-[3rem_minmax(0,1fr)_3rem] items-center">
-          <Link to="/" aria-label={t.close} className="pill grid h-12 w-12 place-items-center hover:bg-accent">
+          <Link to="/chat" aria-label={t.close} className="pill grid h-12 w-12 place-items-center hover:bg-accent">
             <X className="h-5 w-5" />
           </Link>
           <h1 className="truncate text-center text-xl font-semibold">{t.settings}</h1>
         </header>
 
         <div className="mt-6 flex items-center gap-4 rounded-3xl bg-card px-5 py-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-background font-semibold">G</div>
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-background font-semibold uppercase">{user?.email?.[0] ?? "?"}</div>
           <div className="min-w-0">
-            <p className="truncate text-lg font-semibold">{t.guest}</p>
-            <p className="truncate text-muted-foreground">{t.notSignedIn}</p>
+            <p className="truncate text-lg font-semibold">{user?.email?.split("@")[0]}</p>
+            <p className="truncate text-muted-foreground">{user?.email}</p>
           </div>
         </div>
 
@@ -88,9 +103,17 @@ function SettingsPage() {
         <Group title={t.account}>
           <Row icon={UserCircle} label={t.profile} onClick={later} />
           <Row icon={Shield} label={t.privacy} onClick={later} />
-          <Row icon={Cpu} label={t.providers} onClick={later} />
           <Row icon={BarChart3} label={t.usage} onClick={later} />
+          <Row icon={LogOut} label={t.signOut} onClick={signOut} right={<span />} />
         </Group>
+
+        {status.data?.isAdmin && (
+          <Group title={t.providersStatus}>
+            {status.data.providers.map((p) => (
+              <Row key={p.id} icon={Cpu} label={p.id} right={<span className={p.configured ? "text-brand" : "text-muted-foreground"}>{p.configured ? t.connectedL : t.notConfigured}</span>} />
+            ))}
+          </Group>
+        )}
       </div>
     </div>
   );
