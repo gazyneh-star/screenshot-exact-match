@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_access_state: {
+        Row: {
+          created_at: string
+          reason: string
+          scope: string
+          status: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          reason: string
+          scope: string
+          status: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string
+          scope?: string
+          status?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string
@@ -40,30 +64,36 @@ export type Database = {
       }
       messages: {
         Row: {
+          attachments: Json
           content: string
           conversation_id: string
           created_at: string
           id: string
+          image_path: string | null
           model: string | null
           provider: string | null
           role: string
           user_id: string
         }
         Insert: {
+          attachments?: Json
           content?: string
           conversation_id: string
           created_at?: string
           id?: string
+          image_path?: string | null
           model?: string | null
           provider?: string | null
           role: string
           user_id?: string
         }
         Update: {
+          attachments?: Json
           content?: string
           conversation_id?: string
           created_at?: string
           id?: string
+          image_path?: string | null
           model?: string | null
           provider?: string | null
           role?: string

@@ -1,0 +1,12 @@
+ALTER TABLE public.messages ADD COLUMN attachments jsonb NOT NULL DEFAULT '[]'::jsonb, ADD COLUMN image_path text;
+CREATE POLICY "chat_media_read_own" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'chat-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "chat_media_insert_own" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'chat-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "chat_media_delete_own" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'chat-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE TABLE public.ai_access_state (scope text PRIMARY KEY, reason text NOT NULL, status integer NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, DELETE ON public.ai_access_state TO authenticated;
+GRANT ALL ON public.ai_access_state TO service_role;
+ALTER TABLE public.ai_access_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner reads AI access" ON public.ai_access_state FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Owner resumes AI access" ON public.ai_access_state FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE FUNCTION public.touch_ai_access_state() RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+CREATE TRIGGER touch_ai_access_state BEFORE UPDATE ON public.ai_access_state FOR EACH ROW EXECUTE FUNCTION public.touch_ai_access_state();
