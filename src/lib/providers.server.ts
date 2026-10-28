@@ -1,5 +1,6 @@
 // Server-only multi-provider router. Every provider here speaks the
 // OpenAI-compatible chat/completions streaming protocol.
+import { AIRequestError, checkAccess, safeUpstreamError } from "./ai-access.server";
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
 type Provider = {
@@ -44,10 +45,13 @@ export function providerStatus() {
 const SYSTEM: ChatMsg = { role: "system", content: "You are Elvyn, a calm, precise and helpful AI assistant. Answer in the user's language. Use Markdown when helpful." };
 
 /** Tries providers in order; falls back only before any content has been sent. */
-export async function routeChat(messages: ChatMsg[], signal: AbortSignal) {
+export async function routeChat(messages: ChatMsg[], signal: AbortSignal, selected = "auto") {
   const errors: string[] = [];
-  for (const p of getProviders()) {
-    for (const key of p.keys) {
+  const providers = getProviders().filter((p) => selected === "auto" || selected === p.id);
+  if (!providers.length) throw new AIRequestError(400, "This provider needs its API key, model and API address configured.");
+  for (const p of providers) {
+    await checkAccess(p.id);
+    for (const key of p.keys.slice(0, 1)) {
       try {
         const res = await fetch(`${p.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
           method: "POST",
@@ -56,10 +60,13 @@ export async function routeChat(messages: ChatMsg[], signal: AbortSignal) {
           body: JSON.stringify({ model: p.model, stream: true, messages: [SYSTEM, ...messages], ...p.extra }),
         });
         if (res.ok && res.body) return { provider: p, body: res.body };
+        const error = await safeUpstreamError(res, p.id);
+        if (res.status !== 429 && res.status < 500) throw error;
         errors.push(`${p.name}: ${res.status}`);
-        if (res.status === 402 || res.status === 403) break; // key/account problem: next provider
+        if (selected !== "auto") throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (e) {
-        if (signal.aborted) throw e;
+        if (signal.aborted || e instanceof AIRequestError) throw e;
         errors.push(`${p.name}: network error`);
       }
     }
@@ -84,7 +91,9 @@ export function sseToText(body: ReadableStream<Uint8Array>) {
           const data = l.slice(5).trim();
           if (data === "[DONE]") continue;
           try {
-            const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
+            const payload = JSON.parse(data);
+            if (payload.error) { ctl.error(new Error(payload.error.message || "AI stream failed")); return; }
+            const delta = payload?.choices?.[0]?.delta?.content;
             if (typeof delta === "string" && delta) ctl.enqueue(enc.encode(delta));
           } catch {
             /* partial or non-JSON line */
