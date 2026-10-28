@@ -9,3 +9,10 @@ export const getProviderStatus = createServerFn({ method: "GET" })
     const { providerStatus } = await import("@/lib/providers.server");
     return { isAdmin: true, providers: providerStatus() };
   });
+
+export const getAvailableProviders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { getProviders } = await import("@/lib/providers.server");
+    return getProviders().map(({ id, name, model }) => ({ id, name, model }));
+  });
