@@ -5,7 +5,7 @@ import { dict, type Lang } from "./i18n";
 import type { Attachment } from "./chat-schema";
 
 export type Theme = "dark" | "light" | "system";
-export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string; imageFinal?: boolean; error?: string };
+export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string | undefined; imageFinal?: boolean; error?: string };
 export type Conversation = { id: string; title: string; updatedAt: number };
 
 type Store = {
