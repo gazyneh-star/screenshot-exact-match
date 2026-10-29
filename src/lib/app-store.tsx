@@ -2,9 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { dict, type Lang } from "./i18n";
+import type { Attachment } from "./chat-schema";
 
 export type Theme = "dark" | "light" | "system";
-export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null };
+export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string; imageFinal?: boolean; error?: string };
 export type Conversation = { id: string; title: string; updatedAt: number };
 
 type Store = {
