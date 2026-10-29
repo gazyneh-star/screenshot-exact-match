@@ -17,5 +17,5 @@ export const Route = createFileRoute("/_authenticated/chat/$id")({
 
 function ChatPage() {
   const { id } = Route.useParams();
-  return <ChatView key={id} id={id} />;
+  return <ChatView id={id} />;
 }

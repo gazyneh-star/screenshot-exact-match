@@ -12,6 +12,7 @@ export function createResponsesCall(
   config: { baseURL: string; apiKey: string; model: string },
   messages: ModelMessage[],
   instructions?: string,
+  research = true,
 ) {
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
   const provider = createOpenAI({
@@ -27,7 +28,7 @@ export function createResponsesCall(
     ...(instructions ? { instructions } : {}),
     messages,
     maxRetries: 0,
-    tools: { web_search: provider.tools.webSearch({}) },
+    ...(research ? { tools: { web_search: provider.tools.webSearch({}) } } : {}),
     providerOptions: {
       openai: {
         store: false,

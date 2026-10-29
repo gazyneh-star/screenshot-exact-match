@@ -1,4 +1,5 @@
 const en = {
+  tools: "Tools", imagePrompt: "Describe an image…", download: "Download", fileLimit: "Files must be non-empty and under 20 MB.", attachmentLimit: "Attach up to 4 files.", save: "Save", displayName: "Display name", exportData: "Export chats", clearChats: "Delete all chats", confirmDelete: "Delete all your chats? This cannot be undone.", saved: "Saved", messages: "Messages", resumeAI: "Resume AI after restoring access",
   signIn: "Sign in",
   signUp: "Create account",
   email: "Email",
@@ -51,6 +52,7 @@ const en = {
 };
 type D = typeof en;
 const ru: D = {
+  tools: "Инструменты", imagePrompt: "Опишите изображение…", download: "Скачать", fileLimit: "Файлы должны быть непустыми и меньше 20 МБ.", attachmentLimit: "Можно прикрепить до 4 файлов.", save: "Сохранить", displayName: "Имя", exportData: "Экспорт чатов", clearChats: "Удалить все чаты", confirmDelete: "Удалить все ваши чаты? Это нельзя отменить.", saved: "Сохранено", messages: "Сообщения", resumeAI: "Возобновить AI после восстановления доступа",
   signIn: "Войти",
   signUp: "Создать аккаунт",
   email: "Эл. почта",
@@ -102,6 +104,7 @@ const ru: D = {
   close: "Закрыть",
 };
 const ar: D = {
+  tools: "الأدوات", imagePrompt: "صف صورة…", download: "تنزيل", fileLimit: "الملفات يجب ألا تكون فارغة وأقل من 20 ميغابايت.", attachmentLimit: "أرفق حتى 4 ملفات.", save: "حفظ", displayName: "الاسم", exportData: "تصدير المحادثات", clearChats: "حذف جميع المحادثات", confirmDelete: "حذف جميع محادثاتك؟ لا يمكن التراجع.", saved: "تم الحفظ", messages: "الرسائل", resumeAI: "استئناف الذكاء الاصطناعي بعد استعادة الوصول",
   signIn: "تسجيل الدخول",
   signUp: "إنشاء حساب",
   email: "البريد الإلكتروني",
