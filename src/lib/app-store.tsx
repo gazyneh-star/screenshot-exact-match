@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { dict, type Lang } from "./i18n";
 import type { Attachment } from "./chat-schema";
+import { toast } from "sonner";
 
 export type Theme = "dark" | "light" | "system";
 export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string | undefined; imageFinal?: boolean; error?: string };
@@ -36,7 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const l = localStorage.getItem("elvyn.lang") as Lang | null;
     const th = localStorage.getItem("elvyn.theme") as Theme | null;
     if (l && l in dict) setLangS(l);
-    if (th) setThemeS(th);
+    if (th === "dark" || th === "light" || th === "system") setThemeS(th);
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") setUser(session?.user ?? null);
@@ -90,14 +91,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         conversations,
         refresh,
         rename: async (id, title) => {
-          setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title } : c)));
           const { error } = await supabase.from("conversations").update({ title }).eq("id", id);
-          if (error) console.error(error);
+          if (error) toast.error(error.message);
+          else setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title } : c)));
         },
         remove: async (id) => {
-          setConversations((cs) => cs.filter((c) => c.id !== id));
           const { error } = await supabase.from("conversations").delete().eq("id", id);
-          if (error) console.error(error);
+          if (error) toast.error(error.message);
+          else setConversations((cs) => cs.filter((c) => c.id !== id));
         },
       }}
     >

@@ -10,6 +10,9 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
-- AI chat streams through `src/routes/api/chat.ts` (bearer-verified) using the OpenAI-compatible provider router in `src/lib/providers.server.ts`; providers are enabled purely by env secrets and fall back in order only before output starts, with the Lovable gateway last so chat always works.
+- AI chat uses bearer-verified server routes, environment-configured providers and the existing chat-completions protocol; explicit provider selection never falls back, and automatic fallback is limited to transient failures before output starts to avoid hiding access denials.
+- Image generation forwards native SSE through a bearer-verified server route; research and attachment analysis use request-scoped Responses SDK calls so tools and media use the documented protocol.
+- Chat files live in private Storage under user/conversation paths, with references on message rows and owner-scoped policies so saved media remains private across reloads.
+- Persist AI access blocks in `ai_access_state`; every AI entry point checks it and only the owner can explicitly resume after restoring access, preventing retry loops across reloads.
 - Chats/messages are read and written from the browser Supabase client under per-user RLS; signed-in pages live under `src/routes/_authenticated/`.
 - The first account to sign up gets the `admin` role (owner) via the signup trigger; owner-only server checks use `has_role`.

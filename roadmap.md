@@ -1,8 +1,9 @@
 # Elvyn repairs
-- [ ] Repair provider selection and surface actionable connection errors.
-- [ ] Reduce streaming render and scroll lag.
-- [ ] Enable streamed image generation and saved images.
-- [ ] Enable photo/camera and text-file attachments.
-- [ ] Replace unavailable settings actions with profile, privacy and usage controls.
-- [ ] Verify signed-in chat, image generation, persistence and mobile layout.
+- [x] Repair provider selection and surface actionable connection errors.
+- [x] Reduce streaming render and scroll lag.
+- [x] Enable streamed image generation and saved images (live generation verified).
+- [x] Enable photo/camera and PDF/text-file attachments.
+- [x] Replace unavailable settings actions with profile, privacy and usage controls.
+- [x] Verify live chat, image generation, research and public mobile layout.
+- [ ] Verify signed-in persistence and tool UI (blocked: external Supabase sessions cannot be minted or injected).
 - [ ] Connect remaining routers (blocked on their API URLs, model IDs and keys).

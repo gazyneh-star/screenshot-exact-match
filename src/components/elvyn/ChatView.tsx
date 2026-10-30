@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import { streamImage } from "@/lib/stream-image";
 import { attachmentSchema, type Attachment, type SendInput } from "@/lib/chat-schema";
 import { cn } from "@/lib/utils";
+import { AttachmentView } from "./AttachmentView";
 
 export function ChatView({ id }: { id?: string }) {
   const { t, refresh, model, user } = useApp();
@@ -21,6 +22,9 @@ export function ChatView({ id }: { id?: string }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const activeId = useRef(id);
+  activeId.current = id;
   const endRef = useRef<HTMLDivElement>(null);
   const scrolling = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +52,8 @@ export function ChatView({ id }: { id?: string }) {
   }, [messages]);
 
   const send = async ({ text, mode, files }: SendInput) => {
-    if (busy || !user) return;
+    if (busyRef.current || !user) return;
+    busyRef.current = true;
     setBusy(true);
     let convId = id;
     const draftId = crypto.randomUUID();
@@ -122,13 +127,13 @@ export function ChatView({ id }: { id?: string }) {
       if (saveError) throw saveError;
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", cid);
       await refresh();
-      if (id !== cid) { skipLoad.current = cid; await navigate({ to: "/chat/$id", params: { id: cid } }); }
+      if (id !== cid && activeId.current === id) { skipLoad.current = cid; await navigate({ to: "/chat/$id", params: { id: cid } }); }
     } catch (error) {
       const message = error instanceof Error ? error.message : t.aiError;
       toast.error(message);
       setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, error: message, imageSrc: undefined } : m));
       if (!persistedUser) throw error;
-    } finally { setBusy(false); }
+    } finally { busyRef.current = false; setBusy(false); }
   };
 
   return (
@@ -165,7 +170,7 @@ export function ChatView({ id }: { id?: string }) {
                     )}
                   >
                     {m.content && (m.role === "user" ? <span className="whitespace-pre-wrap">{m.content}</span> : <div className="[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-3 [&_a]:text-brand [&_a]:underline [&_ul]:list-disc [&_ul]:ps-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown></div>)}
-                    {m.attachments?.map((a) => <div key={a.path} className="mt-2 text-sm text-muted-foreground">{a.name}</div>)}
+                    {m.attachments?.map((a) => <AttachmentView key={a.path} attachment={a} />)}
                     {m.imageSrc && <div className="mt-2"><img src={m.imageSrc} alt={t.createImage} className={cn("max-h-96 w-full rounded-lg object-contain transition-[filter]", m.imageFinal ? "blur-0" : "blur-2xl")} />{m.imageFinal && <Button variant="link" asChild><a href={m.imageSrc} download="elvyn-image.png" target="_blank" rel="noreferrer">{t.download}</a></Button>}</div>}
                     {m.error && <p role="alert" className="mt-2 text-destructive">{m.error}</p>}
                     {!m.content && !m.imageSrc && !m.error && busy && <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-brand motion-reduce:animate-none" />}

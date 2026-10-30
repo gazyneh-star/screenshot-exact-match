@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/chat")({
         if (!parsed.success) return new Response("Invalid chat request", { status: 400 });
         const { messages, provider: selected, mode } = parsed.data;
         try {
-          const { AIRequestError, checkAccess, safeUpstreamError } = await import("@/lib/ai-access.server");
+          const { AIRequestError, checkAccess, recordStreamError } = await import("@/lib/ai-access.server");
           const hasMedia = messages.some((m) => m.attachments.length > 0);
           if (mode === "research" || hasMedia) {
             await checkAccess("lovable");
@@ -41,9 +41,9 @@ export const Route = createFileRoute("/api/chat")({
             const call = createResponsesCall(request, { baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, model: "openai/gpt-6-astra" }, formatted, "You are Elvyn. Answer in the user's language. Cite source URLs when researching.", mode === "research");
             const iterator = call.result.fullStream[Symbol.asyncIterator]();
             let first = await iterator.next();
+            while (!first.done && first.value.type !== "error" && first.value.type !== "text-delta" && first.value.type !== "source") first = await iterator.next();
             if (!first.done && first.value.type === "error") {
-              const error = first.value.error as { statusCode?: number; responseBody?: string; message?: string };
-              throw await safeUpstreamError(new Response(error.responseBody || JSON.stringify({ message: error.message }), { status: error.statusCode || 502 }), "lovable");
+              throw await recordStreamError(first.value.error, "lovable");
             }
             const encoder = new TextEncoder();
             const stream = new ReadableStream<Uint8Array>({ async start(controller) {
@@ -52,7 +52,11 @@ export const Route = createFileRoute("/api/chat")({
                   const part = first.value;
                   if (part.type === "text-delta") controller.enqueue(encoder.encode(part.text));
                   if (part.type === "source" && part.sourceType === "url") controller.enqueue(encoder.encode(`\n\n[${part.title || part.url}](${part.url})\n`));
-                  if (part.type === "error") throw part.error;
+                  if (part.type === "error") {
+                    const error = await recordStreamError(part.error, "lovable");
+                    controller.enqueue(encoder.encode(`\n\n${error.message}`));
+                    controller.close(); return;
+                  }
                   first = await iterator.next();
                 }
                 controller.close();

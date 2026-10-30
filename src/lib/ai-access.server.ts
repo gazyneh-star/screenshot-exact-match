@@ -18,11 +18,18 @@ export async function safeUpstreamError(response: Response, scope: string) {
     message = body.message || body.error?.message || message;
     type = body.type || body.error?.type || "";
   } catch { /* Never expose arbitrary provider response bodies. */ }
-  if (response.status === 402 || response.status === 403) {
+  const eligibility = ["provider_not_available_in_region", "model_requires_retention_consent", "model_vendor_not_enabled"].includes(type);
+  if (response.status === 402 || (response.status === 403 && !eligibility)) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceBlock = response.status === 402 || ["credit_limit_reached", "ai_disabled"].includes(type);
     const { error } = await supabaseAdmin.from("ai_access_state").upsert({ scope: workspaceBlock ? "gateway" : scope, status: response.status, reason: message });
     if (error) throw new AIRequestError(response.status, message);
   }
   return new AIRequestError(response.status, message);
+}
+
+export async function recordStreamError(error: unknown, scope: string) {
+  const e = error as { statusCode?: number; status?: number; responseBody?: string; message?: string; type?: string; code?: string };
+  const status = e.statusCode || e.status || (e.type === "permission_error" ? 403 : 502);
+  return safeUpstreamError(new Response(e.responseBody || JSON.stringify({ error: e }), { status }), scope);
 }
