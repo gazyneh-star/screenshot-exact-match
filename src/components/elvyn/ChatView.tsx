@@ -21,6 +21,9 @@ export function ChatView({ id }: { id?: string }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const activeId = useRef(id);
+  activeId.current = id;
   const endRef = useRef<HTMLDivElement>(null);
   const scrolling = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +51,8 @@ export function ChatView({ id }: { id?: string }) {
   }, [messages]);
 
   const send = async ({ text, mode, files }: SendInput) => {
-    if (busy || !user) return;
+    if (busyRef.current || !user) return;
+    busyRef.current = true;
     setBusy(true);
     let convId = id;
     const draftId = crypto.randomUUID();
@@ -122,13 +126,13 @@ export function ChatView({ id }: { id?: string }) {
       if (saveError) throw saveError;
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", cid);
       await refresh();
-      if (id !== cid) { skipLoad.current = cid; await navigate({ to: "/chat/$id", params: { id: cid } }); }
+      if (id !== cid && activeId.current === id) { skipLoad.current = cid; await navigate({ to: "/chat/$id", params: { id: cid } }); }
     } catch (error) {
       const message = error instanceof Error ? error.message : t.aiError;
       toast.error(message);
       setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, error: message, imageSrc: undefined } : m));
       if (!persistedUser) throw error;
-    } finally { setBusy(false); }
+    } finally { busyRef.current = false; setBusy(false); }
   };
 
   return (
