@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import { streamImage } from "@/lib/stream-image";
 import { attachmentSchema, type Attachment, type SendInput } from "@/lib/chat-schema";
 import { cn } from "@/lib/utils";
+import { AttachmentView } from "./AttachmentView";
 
 export function ChatView({ id }: { id?: string }) {
   const { t, refresh, model, user } = useApp();
@@ -169,7 +170,7 @@ export function ChatView({ id }: { id?: string }) {
                     )}
                   >
                     {m.content && (m.role === "user" ? <span className="whitespace-pre-wrap">{m.content}</span> : <div className="[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-3 [&_a]:text-brand [&_a]:underline [&_ul]:list-disc [&_ul]:ps-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown></div>)}
-                    {m.attachments?.map((a) => <div key={a.path} className="mt-2 text-sm text-muted-foreground">{a.name}</div>)}
+                    {m.attachments?.map((a) => <AttachmentView key={a.path} attachment={a} />)}
                     {m.imageSrc && <div className="mt-2"><img src={m.imageSrc} alt={t.createImage} className={cn("max-h-96 w-full rounded-lg object-contain transition-[filter]", m.imageFinal ? "blur-0" : "blur-2xl")} />{m.imageFinal && <Button variant="link" asChild><a href={m.imageSrc} download="elvyn-image.png" target="_blank" rel="noreferrer">{t.download}</a></Button>}</div>}
                     {m.error && <p role="alert" className="mt-2 text-destructive">{m.error}</p>}
                     {!m.content && !m.imageSrc && !m.error && busy && <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-brand motion-reduce:animate-none" />}

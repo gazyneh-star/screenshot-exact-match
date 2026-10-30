@@ -14,7 +14,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks();
 describe("Provider behavior", () => {
   it("sends the explicitly selected provider without invoking another", async () => {
     vi.stubEnv("GEMINI_KEYS", "test-gemini"); vi.stubEnv("GROQ_KEYS", "test-groq");
-    const fetcher = vi.fn(async () => new Response("data: [DONE]\n")); vi.stubGlobal("fetch", fetcher);
+    const fetcher = vi.fn(async (_input: RequestInfo | URL) => new Response("data: [DONE]\n")); vi.stubGlobal("fetch", fetcher);
     const result = await routeChat([{ role: "user", content: "Hello" }], new AbortController().signal, "groq");
     expect(result.provider.id).toBe("groq");
     expect(fetcher).toHaveBeenCalledOnce();
