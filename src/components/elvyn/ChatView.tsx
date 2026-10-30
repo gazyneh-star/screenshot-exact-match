@@ -141,18 +141,18 @@ export function ChatView({ id }: { id?: string }) {
       <Sidebar open={open} onClose={() => setOpen(false)} {...(id ? { activeId: id } : {})} />
       <main className="canvas-glow relative flex min-w-0 flex-1 flex-col">
         <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 pt-4">
-          <Button variant="ghost" aria-label="Menu" onClick={() => setOpen(true)} className="pill grid h-12 w-12 place-items-center lg:invisible">
+          <Button variant="ghost" aria-label="Menu" onClick={() => setOpen(true)} className="pill grid h-12 w-12 shrink-0 place-items-center rounded-full lg:invisible">
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex min-w-0 justify-start">
             <ModelSelector />
           </div>
-          <Button variant="ghost" aria-label={t.newChat} onClick={() => navigate({ to: "/chat" })} className="pill grid h-12 w-12 place-items-center hover:bg-accent">
+          <Button variant="ghost" aria-label={t.newChat} onClick={() => navigate({ to: "/chat" })} className="pill grid h-12 w-12 shrink-0 place-items-center rounded-full hover:bg-accent">
             <SquarePen className="h-5 w-5" />
           </Button>
         </header>
 
-        <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) scrolling.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }} className="flex-1 overflow-y-auto px-4">
+        <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) scrolling.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }} className="flex-1 overflow-y-auto overflow-x-hidden px-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-6 pb-10 text-center">
               <ElvynLogo className="h-16 w-16" />
@@ -169,7 +169,7 @@ export function ChatView({ id }: { id?: string }) {
                       m.role === "user" ? "rounded-3xl bg-surface-raised px-4 py-2.5" : "text-foreground",
                     )}
                   >
-                    {m.content && (m.role === "user" ? <span className="whitespace-pre-wrap">{m.content}</span> : <div className="[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-3 [&_a]:text-brand [&_a]:underline [&_ul]:list-disc [&_ul]:ps-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown></div>)}
+                    {m.content && (m.role === "user" ? <span className="whitespace-pre-wrap">{m.content}</span> : <div className="[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-3 [&_a]:text-brand [&_a]:underline [&_ul]:list-disc [&_ul]:ps-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown></div>)}
                     {m.attachments?.map((a) => <AttachmentView key={a.path} attachment={a} />)}
                     {m.imageSrc && <div className="mt-2"><img src={m.imageSrc} alt={t.createImage} className={cn("max-h-96 w-full rounded-lg object-contain transition-[filter]", m.imageFinal ? "blur-0" : "blur-2xl")} />{m.imageFinal && <Button variant="link" asChild><a href={m.imageSrc} download="elvyn-image.png" target="_blank" rel="noreferrer">{t.download}</a></Button>}</div>}
                     {m.error && <p role="alert" className="mt-2 text-destructive">{m.error}</p>}
