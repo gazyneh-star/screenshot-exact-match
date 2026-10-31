@@ -1,4 +1,10 @@
-# Elvyn repairs
+# Elvyn upgrades
+- [ ] Add dedicated Speed/Smart chains while preserving Auto and credentials.
+- [ ] Add native Gemini base64 vision, including generated-image context.
+- [ ] Add independent response-language settings and warm system instructions.
+- [ ] Add saved per-chat personas and secure, independent snapshot forks.
+- [ ] Ground web-search answers in live evidence and the actual current date.
+- [ ] Run regression tests and verify available live flows; report external blockers.
 - [x] Repair provider selection and surface actionable connection errors.
 - [x] Reduce streaming render and scroll lag.
 - [x] Enable streamed image generation and saved images (live generation verified).
