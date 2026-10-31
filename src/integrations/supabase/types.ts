@@ -38,10 +38,49 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_snapshots: {
+        Row: {
+          code_hash: string
+          context: Json
+          conversation_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          context: Json
+          conversation_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          code_hash?: string
+          context?: Json
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_snapshots_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
           id: string
+          persona: string
           title: string
           updated_at: string
           user_id: string
@@ -49,6 +88,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          persona?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -56,6 +96,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          persona?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -160,6 +201,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_chat_snapshot: { Args: { payload: Json }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
