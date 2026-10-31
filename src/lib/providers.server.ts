@@ -1,6 +1,7 @@
 // Server-only multi-provider router. Every provider here speaks the
 // OpenAI-compatible chat/completions streaming protocol.
 import { AIRequestError, checkAccess, safeUpstreamError } from "./ai-access.server";
+import { SPEED_CHAIN, SMART_CHAIN, SMART_EXHAUSTED, systemInstructions } from "./chat-policy";
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
 type Provider = {
@@ -20,6 +21,7 @@ export function getProviders(): Provider[] {
   const all: Provider[] = [
     { id: "gemini", name: "Google Gemini", keys: list("GEMINI_KEYS"), model: env("GEMINI_MODEL") || "gemini-3.5-flash", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" },
     { id: "groq", name: "Groq", keys: list("GROQ_KEYS"), model: env("GROQ_MODEL") || "openai/gpt-oss-120b", baseUrl: "https://api.groq.com/openai/v1" },
+    { id: "cerebras", name: "Cerebras", keys: list("CEREBRAS_KEYS"), model: env("CEREBRAS_MODEL"), baseUrl: env("CEREBRAS_BASE_URL") || "https://api.cerebras.ai/v1" },
     { id: "sambanova", name: "SambaNova", keys: list("SAMBANOVA_KEYS"), model: env("SAMBANOVA_MODEL") || "Meta-Llama-3.3-70B-Instruct", baseUrl: env("SAMBANOVA_BASE_URL") || "https://api.sambanova.ai/v1" },
     { id: "cloudflare", name: "Cloudflare Workers AI", keys: cfAcct ? list("CLOUDFLARE_API_TOKEN") : [], model: env("CLOUDFLARE_MODEL") || "@cf/meta/llama-3.1-8b-instruct", baseUrl: `https://api.cloudflare.com/client/v4/accounts/${cfAcct}/ai/v1` },
     { id: "together", name: "Together AI", keys: list("TOGETHER_KEYS"), model: env("TOGETHER_MODEL") || "meta-llama/Llama-3.3-70B-Instruct-Turbo", baseUrl: env("TOGETHER_BASE_URL") || "https://api.together.xyz/v1" },
@@ -38,17 +40,33 @@ export function getProviders(): Provider[] {
 
 export function providerStatus() {
   const active = new Set(getProviders().map((p) => p.id));
-  const names = ["gemini", "groq", "sambanova", "cloudflare", "together", "deepseek", "openrouter", "orcarouter", "teamorouter", "tokenharbor", "huggingface", "pollinations", "lovable"];
+  const names = ["gemini", "groq", "cerebras", "sambanova", "cloudflare", "together", "deepseek", "openrouter", "orcarouter", "teamorouter", "tokenharbor", "huggingface", "pollinations", "lovable"];
   return names.map((id) => ({ id, configured: active.has(id) }));
 }
 
-const SYSTEM: ChatMsg = { role: "system", content: "You are Elvyn, a calm, precise and helpful AI assistant. Answer in the user's language. Use Markdown when helpful." };
+export function chainProviders(selected: string) {
+  const all = getProviders();
+  if (selected === "auto") return all.filter((p) => p.id !== "cerebras");
+  const chain = selected === "speed" ? SPEED_CHAIN : selected === "smart" ? SMART_CHAIN : null;
+  if (!chain) return all.filter((p) => p.id === selected);
+  return chain.flatMap((id) => {
+    const provider = all.find((p) => p.id === id);
+    if (!provider) return [];
+    if (selected === "speed" && id === "groq") return [{ ...provider, model: "llama-3.3-70b-versatile" }];
+    if (selected === "smart" && id === "teamorouter") return [{ ...provider, model: "deepseek-v4-pro-free" }];
+    // Retired Gemini/Cerebras models use the existing configured current model.
+    // OpenRouter Smart must be explicitly configured to a DeepSeek/Qwen model.
+    if (selected === "smart" && id === "openrouter" && !/deepseek|qwen/i.test(provider.model)) return [];
+    return [provider];
+  });
+}
 
 /** Tries providers in order; falls back only before any content has been sent. */
-export async function routeChat(messages: ChatMsg[], signal: AbortSignal, selected = "auto") {
+export async function routeChat(messages: ChatMsg[], signal: AbortSignal, selected = "auto", instructions = systemInstructions()) {
   const errors: string[] = [];
-  const providers = getProviders().filter((p) => selected === "auto" || selected === p.id);
-  if (!providers.length) throw new AIRequestError(400, "This provider needs its API key, model and API address configured.");
+  const providers = chainProviders(selected);
+  const hasChain = ["auto", "speed", "smart"].includes(selected);
+  if (!providers.length) throw new AIRequestError(400, selected === "smart" ? SMART_EXHAUSTED : "This mode needs its provider API keys, current models and API addresses configured.");
   for (const p of providers) {
     await checkAccess(p.id);
     for (const key of p.keys.slice(0, 1)) {
@@ -57,21 +75,23 @@ export async function routeChat(messages: ChatMsg[], signal: AbortSignal, select
           method: "POST",
           signal,
           headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-          body: JSON.stringify({ model: p.model, stream: true, messages: [SYSTEM, ...messages], ...p.extra }),
+          body: JSON.stringify({ model: p.model, stream: true, messages: [{ role: "system", content: instructions }, ...messages], ...p.extra }),
         });
         if (res.ok && res.body) return { provider: p, body: res.body };
         const error = await safeUpstreamError(res, p.id);
         if (res.status !== 429 && res.status < 500) throw error;
         errors.push(`${p.name}: ${res.status}`);
-        if (selected !== "auto") throw error;
+        if (!hasChain) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (e) {
         if (signal.aborted || e instanceof AIRequestError) throw e;
         errors.push(`${p.name}: network error`);
+        if (!hasChain) throw new AIRequestError(502, `${p.name}: connection failed.`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
   }
-  throw new Error(errors.length ? `All providers failed (${errors.join(", ")})` : "No AI provider is configured");
+  throw new AIRequestError(503, selected === "smart" ? SMART_EXHAUSTED : `All ${selected} nodes are currently busy. Please try again later. (${errors.join(", ")})`);
 }
 
 /** Converts an OpenAI-style SSE stream into a plain text stream. */
