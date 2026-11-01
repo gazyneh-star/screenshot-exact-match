@@ -15,7 +15,7 @@ export function ModelSelector() {
     <div className="relative min-w-0">
       <Button variant="ghost" onClick={() => setOpen((o) => !o)} className="flex min-w-0 items-center gap-1.5 rounded-full px-3 py-2 text-[20px] font-medium hover:bg-surface">
         <span className="truncate">Elvyn</span>
-        <span className="max-w-32 truncate text-muted-foreground">{model === "auto" ? t.auto : providers.data?.find((p) => p.id === model)?.name || model}</span>
+        <span className="max-w-32 truncate text-muted-foreground">{model === "auto" ? t.auto : model === "speed" ? t.speed : model === "smart" ? t.smart : providers.data?.find((p) => p.id === model)?.name || model}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </Button>
       {open && (
@@ -33,6 +33,7 @@ export function ModelSelector() {
               </span>
               {model === "auto" && <Check className="mt-1 h-4 w-4" />}
             </Button>
+            {(["speed", "smart"] as const).map((mode) => <Button key={mode} variant="ghost" onClick={() => { setModel(mode); setOpen(false); }} className="h-auto w-full justify-start rounded-2xl px-3 py-2.5"><span className="flex-1 text-start">{t[mode]}</span>{model === mode && <Check className="h-4 w-4" />}</Button>)}
             {providers.data?.map((p) => <Button key={p.id} variant="ghost" onClick={() => { setModel(p.id); setOpen(false); }} className="h-auto w-full justify-start rounded-2xl px-3 py-2.5 text-start">
               <span className="min-w-0 flex-1"><span className="block">{p.name}</span><span className="block truncate text-xs text-muted-foreground">{p.model}</span></span>{model === p.id && <Check />}
             </Button>)}
