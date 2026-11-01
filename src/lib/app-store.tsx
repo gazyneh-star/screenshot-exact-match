@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { dict, type Lang } from "./i18n";
 import type { Attachment } from "./chat-schema";
 import { toast } from "sonner";
+import { responseLanguages, type ResponseLanguage } from "./chat-policy";
 
 export type Theme = "dark" | "light" | "system";
 export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string | undefined; imageFinal?: boolean; error?: string };
 export type Conversation = { id: string; title: string; updatedAt: number };
 
 type Store = {
+  responseLanguage: ResponseLanguage;
+  setResponseLanguage: (value: ResponseLanguage) => void;
   lang: Lang;
   setLang: (l: Lang) => void;
   theme: Theme;
@@ -30,6 +33,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangS] = useState<Lang>("ru");
   const [theme, setThemeS] = useState<Theme>("dark");
   const [model, setModel] = useState("auto");
+  const [responseLanguage, setResponseLanguageState] = useState<ResponseLanguage>("auto");
   const [user, setUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
@@ -38,6 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const th = localStorage.getItem("elvyn.theme") as Theme | null;
     if (l && l in dict) setLangS(l);
     if (th === "dark" || th === "light" || th === "system") setThemeS(th);
+    const response = localStorage.getItem("elvyn.responseLanguage");
+    if (responseLanguages.some((value) => value === response)) setResponseLanguageState(response as ResponseLanguage);
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") setUser(session?.user ?? null);
@@ -80,6 +86,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider
       value={{
+        responseLanguage,
+        setResponseLanguage: (value) => { setResponseLanguageState(value); localStorage.setItem("elvyn.responseLanguage", value); },
         lang,
         setLang: (l) => { setLangS(l); localStorage.setItem("elvyn.lang", l); },
         theme,

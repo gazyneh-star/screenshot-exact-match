@@ -11,6 +11,8 @@ import { langNames, type Lang } from "@/lib/i18n";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { responseLanguages, type ResponseLanguage } from "@/lib/chat-policy";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -46,7 +48,7 @@ function Row({ icon: Icon, label, onClick, right }: { icon?: typeof X; label: st
 }
 
 function SettingsPage() {
-  const { t, theme, setTheme, lang, setLang, user, refresh } = useApp();
+  const { t, theme, setTheme, lang, setLang, user, refresh, responseLanguage, setResponseLanguage } = useApp();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fetchStatus = useServerFn(getProviderStatus);
@@ -129,6 +131,10 @@ function SettingsPage() {
           {(Object.keys(langNames) as Lang[]).map((l) => (
             <Row key={l} label={langNames[l]} onClick={() => setLang(l)} right={lang === l ? <Check className="h-5 w-5" /> : <span />} />
           ))}
+        </Group>
+
+        <Group title={t.responseLanguage}>
+          <div className="p-4"><Select value={responseLanguage} onValueChange={(value) => setResponseLanguage(value as ResponseLanguage)}><SelectTrigger aria-label="Response Language"><SelectValue /></SelectTrigger><SelectContent>{responseLanguages.map((value) => <SelectItem key={value} value={value}>{{ auto: "Automatic (Default)", ru: "Russian", en: "English", ar: "Arabic" }[value]}</SelectItem>)}</SelectContent></Select></div>
         </Group>
 
         <Group title={t.account}>
