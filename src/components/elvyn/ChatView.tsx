@@ -39,7 +39,7 @@ export function ChatView({ id }: { id?: string }) {
     let active = true;
     setContextReady(false);
     setMessages([]);
-    supabase.from("conversations").select("persona").eq("id", id).single().then(({ data, error }) => { if (active) { if (error) toast.error(error.message); else setPersona(data.persona); } });
+    const personaLoad = supabase.from("conversations").select("persona").eq("id", id).single();
     supabase.from("messages").select("id,role,content,provider,attachments,image_path").eq("conversation_id", id).order("created_at").then(async ({ data, error }) => {
       if (!active) return;
       if (error) { toast.error(error.message); return; }
@@ -48,7 +48,8 @@ export function ChatView({ id }: { id?: string }) {
         const image = m.image_path ? await supabase.storage.from("chat-media").createSignedUrl(m.image_path, 3600) : null;
         return { ...m, role: m.role === "user" ? "user" as const : "assistant" as const, attachments: attachments.success ? attachments.data : [], imageSrc: image?.data?.signedUrl, imageFinal: true };
       }));
-      if (active) { setMessages(loaded); setContextReady(true); }
+      const chat = await personaLoad;
+      if (active) { if (chat.error || !chat.data) { toast.error(chat.error?.message || "Conversation not found"); return; } setPersona(chat.data.persona); setMessages(loaded); setContextReady(true); }
     });
     return () => { active = false; };
   }, [id]);
@@ -104,8 +105,9 @@ export function ChatView({ id }: { id?: string }) {
         }, undefined, headers);
         if (!finalImage) throw new Error(t.aiError);
         const blob = await (await fetch(finalImage)).blob();
-        imagePath = `${user.id}/${cid}/${draftId}.png`;
-        const { error: uploadError } = await supabase.storage.from("chat-media").upload(imagePath, blob, { contentType: "image/png" });
+        const extension = blob.type === "image/jpeg" ? "jpg" : blob.type === "image/webp" ? "webp" : "png";
+        imagePath = `${user.id}/${cid}/${draftId}.${extension}`;
+        const { error: uploadError } = await supabase.storage.from("chat-media").upload(imagePath, blob, { contentType: blob.type || "image/png" });
         if (uploadError) throw uploadError;
         setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, image_path: imagePath } : m));
         chosenModel = model === "pollinations" ? null : "openai/gpt-image-2.5-sunburst";

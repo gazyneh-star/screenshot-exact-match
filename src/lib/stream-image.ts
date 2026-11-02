@@ -93,10 +93,10 @@ export async function streamImage(
     if (!replay.ok) {
       throw new Error(`Image generation failed: ${replay.status} ${await replay.text().catch(() => "")}`);
     }
-    const json = (await replay.json()) as { data?: { b64_json?: string }[] };
+    const json = (await replay.json()) as { data?: { b64_json?: string; mime_type?: string }[] };
     const b64 = json.data?.[0]?.b64_json;
     if (!b64) throw new Error("Image generation returned no image");
-    onFrame(`data:image/png;base64,${b64}`, true);
+    onFrame(`data:${json.data?.[0]?.mime_type || "image/png"};base64,${b64}`, true);
     return;
   }
   if (!sawCompleted) throw new Error("Image stream ended without a completed event");

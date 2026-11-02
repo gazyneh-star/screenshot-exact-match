@@ -11,7 +11,7 @@
 
 ## Architecture rules
 - AI chat uses bearer-verified server routes, environment-configured providers and the existing chat-completions protocol; explicit provider selection never falls back, and automatic fallback is limited to transient failures before output starts to avoid hiding access denials.
-- Image generation forwards native SSE through a bearer-verified server route; research and attachment analysis use request-scoped Responses SDK calls so tools and media use the documented protocol.
+- Image generation forwards native Gateway SSE or wraps Pollinations image bytes as a completed frame through a bearer-verified server route; the saved private image is included in future native Gemini vision context.
 - Mode chains preserve Auto's configured order; Speed/Smart have isolated ordered provider lists. Only transient failures before output may fall through; denial, refusal, balance and configuration failures remain terminal.
 - Media and live-search preprocessing uses native Gemini streaming with validated private file bytes encoded as inlineData, then supplies untrusted grounding evidence to the selected mode chain without silently using Lovable AI.
 - Chat personas persist per conversation; response language is an independent preference enforced by shared system instructions in every answer path.

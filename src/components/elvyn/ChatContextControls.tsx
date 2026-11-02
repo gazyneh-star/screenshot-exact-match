@@ -8,7 +8,7 @@ import { generateChatCode } from "@/lib/chat-sharing.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-store";
 
-export function ChatContextControls({ id, persona, onPersona, busy }: { id?: string; persona: string; onPersona: (value: string) => Promise<void>; busy: boolean }) {
+export function ChatContextControls({ id, persona, onPersona, busy }: { id?: string | undefined; persona: string; onPersona: (value: string) => Promise<void>; busy: boolean }) {
   const { t } = useApp();
   const [panel, setPanel] = useState<"persona" | "share" | null>(null);
   const [draft, setDraft] = useState(persona);
