@@ -1,12 +1,19 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, SquarePen, Settings, Pencil, Trash2, X } from "lucide-react";
+import { Search, SquarePen, Settings, Pencil, Trash2, X, GitFork } from "lucide-react";
 import { useState } from "react";
 import { useApp } from "@/lib/app-store";
 import { ElvynLogo } from "./Logo";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useServerFn } from "@tanstack/react-start";
+import { forkChatCode } from "@/lib/chat-sharing.functions";
+import { toast } from "sonner";
 
 export function Sidebar({ open, onClose, activeId }: { open: boolean; onClose: () => void; activeId?: string }) {
-  const { t, conversations, rename, remove } = useApp();
+  const { t, conversations, rename, remove, refresh } = useApp();
+  const [code, setCode] = useState("");
+  const [forking, setForking] = useState(false);
+  const fork = useServerFn(forkChatCode);
   const [q, setQ] = useState("");
   const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
@@ -54,6 +61,10 @@ export function Sidebar({ open, onClose, activeId }: { open: boolean; onClose: (
           />
         )}
 
+        <form className="mt-4 flex min-w-0 items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (forking) return; setForking(true); void fork({ data: { code: code.trim() } }).then(async ({ conversationId }) => { await refresh(); setCode(""); go(conversationId); }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : t.aiError)).finally(() => setForking(false)); }}>
+          <input aria-label={t.joinChat} placeholder={t.joinChat} value={code} onChange={(e) => setCode(e.target.value)} maxLength={48} className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm" />
+          <Button type="submit" variant="outline" size="icon" disabled={forking || !/^[a-fA-F0-9]{48}$/.test(code.trim())} aria-label={t.joinChat} title={t.joinChat}><GitFork className="h-4 w-4" /></Button>
+        </form>
         <div className="mx-2 mt-5 border-t" />
         <p className="px-2 pb-1 pt-4 text-sm text-muted-foreground">{t.recent}</p>
 

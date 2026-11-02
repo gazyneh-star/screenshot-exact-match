@@ -24,7 +24,7 @@ export async function prepareNativeContents(messages: z.infer<typeof chatSchema>
   for (const message of messages) {
     const parts: Part[] = [{ text: message.content || (message.image_path ? "Previously generated image:" : "Attached files:") }];
     const attachments = [...message.attachments];
-    if (message.image_path) attachments.push(attachmentSchema.parse({ path: message.image_path, type: "image/png", name: "generated-image.png" }));
+    if (message.image_path) attachments.push(attachmentSchema.parse({ path: message.image_path, type: /\.jpe?g$/i.test(message.image_path) ? "image/jpeg" : /\.webp$/i.test(message.image_path) ? "image/webp" : "image/png", name: "generated-image" }));
     for (const file of attachments) {
       if (!file.path.startsWith(`${userId}/`)) throw new AIRequestError(403, "File access denied");
       const { data, error } = await supabase.storage.from("chat-media").download(file.path);

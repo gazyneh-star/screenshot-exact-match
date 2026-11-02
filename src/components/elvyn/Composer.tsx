@@ -11,6 +11,7 @@ export function Composer({ onSend, busy }: { onSend: (input: SendInput) => Promi
   const [text, setText] = useState("");
   const [sheet, setSheet] = useState(false);
   const [mode, setMode] = useState<SendMode>("chat");
+  const [webSearch, setWebSearch] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const ref = useRef<HTMLTextAreaElement>(null);
   const photo = useRef<HTMLInputElement>(null);
@@ -19,7 +20,7 @@ export function Composer({ onSend, busy }: { onSend: (input: SendInput) => Promi
   const submit = async () => {
     const v = text.trim();
     if (!v || busy) return;
-    const input = { text: v, mode, files };
+    const input = { text: v, mode: mode === "image" ? mode : webSearch ? "research" as const : "chat" as const, files };
     setText(""); setFiles([]);
     try { await onSend(input); } catch { setText(v); setFiles(input.files); }
     ref.current?.focus();
@@ -47,7 +48,7 @@ export function Composer({ onSend, busy }: { onSend: (input: SendInput) => Promi
         </div>
         {[[Palette, t.createImage, "image"], [Globe, t.research, "research"]].map(([Icon, label, value]) => {
           const I = Icon as typeof Palette;
-          return <Button variant="ghost" key={value as string} onClick={() => { setMode(value as SendMode); setFiles([]); setSheet(false); ref.current?.focus(); }} className="mt-2 h-auto w-full justify-start rounded-2xl px-3 py-3.5 text-[18px]"><I />{label as string}</Button>;
+          return <Button variant="ghost" key={value as string} onClick={() => { if (value === "research") { setWebSearch(true); setMode("chat"); } else { setMode("image"); setFiles([]); } setSheet(false); ref.current?.focus(); }} className="mt-2 h-auto w-full justify-start rounded-2xl px-3 py-3.5 text-[18px]"><I />{label as string}</Button>;
         })}
       </div></>}
     <div className="mx-auto w-full max-w-3xl rounded-[2rem] border bg-surface px-3 py-2.5">
@@ -57,6 +58,7 @@ export function Composer({ onSend, busy }: { onSend: (input: SendInput) => Promi
       </div>}
       <div className="flex items-end gap-2">
         <Button variant="ghost" size="icon" aria-label="Add" disabled={busy} onClick={() => setSheet(true)} className="h-11 w-11 shrink-0 rounded-full"><Plus /></Button>
+        {mode !== "image" && <Button variant={webSearch ? "secondary" : "ghost"} size="icon" aria-label={t.research} title={t.research} aria-pressed={webSearch} disabled={busy} onClick={() => setWebSearch((value) => !value)} className="h-11 w-11 shrink-0 rounded-full"><Globe className="h-5 w-5" /></Button>}
         <textarea ref={ref} rows={1} value={text} maxLength={10000} onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); } }} placeholder={mode === "image" ? t.imagePrompt : t.placeholder} className="max-h-40 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[17px] outline-none placeholder:text-muted-foreground" />
         <Button size="icon" aria-label="Send" onClick={() => void submit()} disabled={!text.trim() || busy} className="h-11 w-11 shrink-0 rounded-full bg-brand text-brand-foreground"><ArrowUp /></Button>
       </div>

@@ -42,7 +42,7 @@ export const forkChatCode = createServerFn({ method: "POST" }).middleware([requi
   try {
     for (const message of payload.messages) {
       for (const attachment of message.attachments) attachment.path = await copyFile(attachment.path, attachment.type);
-      if (message.image_path) message.image_path = await copyFile(message.image_path, "image/png");
+      if (message.image_path) message.image_path = await copyFile(message.image_path, /\.jpe?g$/i.test(message.image_path) ? "image/jpeg" : /\.webp$/i.test(message.image_path) ? "image/webp" : "image/png");
     }
     const imported = await context.supabase.rpc("import_chat_snapshot", { payload });
     if (imported.error || !imported.data) throw new Error(imported.error?.message || "Could not fork this chat.");
