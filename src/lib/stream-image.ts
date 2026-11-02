@@ -1,7 +1,7 @@
 import { createParser } from "eventsource-parser";
 import { flushSync } from "react-dom";
 
-type ImagePayload = { type?: string; b64_json?: string; error?: { message?: string } };
+type ImagePayload = { type?: string; b64_json?: string; mime_type?: string; error?: { message?: string } };
 
 export async function streamImage(
   endpoint: string,
@@ -66,7 +66,7 @@ export async function streamImage(
       const b64 = payload.b64_json;
       const isFinal = type === "image_generation.completed" || type === "image_edit.completed";
       // React batches callbacks from coalesced SSE events unless each frame is committed here.
-      flushSync(() => onFrame(`data:image/png;base64,${b64}`, isFinal));
+      flushSync(() => onFrame(`data:${payload.mime_type || "image/png"};base64,${b64}`, isFinal));
       if (isFinal) sawCompleted = true;
     },
   });

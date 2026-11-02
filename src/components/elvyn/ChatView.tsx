@@ -15,9 +15,12 @@ import { streamImage } from "@/lib/stream-image";
 import { attachmentSchema, type Attachment, type SendInput } from "@/lib/chat-schema";
 import { cn } from "@/lib/utils";
 import { AttachmentView } from "./AttachmentView";
+import { ChatContextControls } from "./ChatContextControls";
 
 export function ChatView({ id }: { id?: string }) {
-  const { t, refresh, model, user } = useApp();
+  const { t, refresh, model, user, responseLanguage } = useApp();
+  const [persona, setPersona] = useState("");
+  const [contextReady, setContextReady] = useState(!id);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -31,9 +34,12 @@ export function ChatView({ id }: { id?: string }) {
   const skipLoad = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!id) { setMessages([]); return; }
+    if (!id) { setMessages([]); setPersona(""); setContextReady(true); skipLoad.current = null; return; }
     if (skipLoad.current === id) return;
     let active = true;
+    setContextReady(false);
+    setMessages([]);
+    supabase.from("conversations").select("persona").eq("id", id).single().then(({ data, error }) => { if (active) { if (error) toast.error(error.message); else setPersona(data.persona); } });
     supabase.from("messages").select("id,role,content,provider,attachments,image_path").eq("conversation_id", id).order("created_at").then(async ({ data, error }) => {
       if (!active) return;
       if (error) { toast.error(error.message); return; }
@@ -42,7 +48,7 @@ export function ChatView({ id }: { id?: string }) {
         const image = m.image_path ? await supabase.storage.from("chat-media").createSignedUrl(m.image_path, 3600) : null;
         return { ...m, role: m.role === "user" ? "user" as const : "assistant" as const, attachments: attachments.success ? attachments.data : [], imageSrc: image?.data?.signedUrl, imageFinal: true };
       }));
-      if (active) setMessages(loaded);
+      if (active) { setMessages(loaded); setContextReady(true); }
     });
     return () => { active = false; };
   }, [id]);
@@ -60,7 +66,7 @@ export function ChatView({ id }: { id?: string }) {
     let persistedUser = false;
     try {
       if (!convId) {
-        const { data, error } = await supabase.from("conversations").insert({ title: text.slice(0, 60) }).select("id").single();
+        const { data, error } = await supabase.from("conversations").insert({ title: text.slice(0, 60), persona }).select("id").single();
         if (error) throw error;
         convId = data.id;
         skipLoad.current = convId;
@@ -92,7 +98,7 @@ export function ChatView({ id }: { id?: string }) {
       let imagePath: string | null = null;
       if (mode === "image") {
         let finalImage = "";
-        await streamImage("/api/generate-image", { prompt: text }, (imageSrc, imageFinal) => {
+        await streamImage("/api/generate-image", { prompt: text, provider: model === "pollinations" ? "pollinations" : "lovable" }, (imageSrc, imageFinal) => {
           if (imageFinal) finalImage = imageSrc;
           setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, imageSrc, imageFinal } : m));
         }, undefined, headers);
@@ -101,10 +107,11 @@ export function ChatView({ id }: { id?: string }) {
         imagePath = `${user.id}/${cid}/${draftId}.png`;
         const { error: uploadError } = await supabase.storage.from("chat-media").upload(imagePath, blob, { contentType: "image/png" });
         if (uploadError) throw uploadError;
-        chosenModel = "openai/gpt-image-2.5-sunburst";
-        provider = "Elvyn built-in";
+        setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, image_path: imagePath } : m));
+        chosenModel = model === "pollinations" ? null : "openai/gpt-image-2.5-sunburst";
+        provider = model === "pollinations" ? "Pollinations" : "Elvyn built-in";
       } else {
-        const res = await fetch("/api/chat", { method: "POST", headers: { ...headers, "content-type": "application/json" }, body: JSON.stringify({ provider: model, mode, messages: history.filter((m) => m.content || m.attachments?.length).slice(-30).map(({ role, content, attachments }) => ({ role, content, attachments: attachments || [] })) }) });
+        const res = await fetch("/api/chat", { method: "POST", headers: { ...headers, "content-type": "application/json" }, body: JSON.stringify({ provider: model, mode, persona, responseLanguage, messages: history.filter((m) => m.content || m.attachments?.length || m.image_path).slice(-30).map(({ role, content, attachments, image_path }) => ({ role, content, image_path, attachments: attachments || [] })) }) });
         if (!res.ok || !res.body) throw new Error((await res.text()) || t.aiError);
         provider = res.headers.get("x-elvyn-provider"); chosenModel = res.headers.get("x-elvyn-model");
         const reader = res.body.getReader(); const decoder = new TextDecoder();
@@ -147,12 +154,13 @@ export function ChatView({ id }: { id?: string }) {
           <div className="flex min-w-0 justify-start">
             <ModelSelector />
           </div>
-          <Button variant="ghost" aria-label={t.newChat} onClick={() => navigate({ to: "/chat" })} className="pill grid h-12 w-12 shrink-0 place-items-center rounded-full hover:bg-accent">
+          <Button variant="ghost" aria-label={t.newChat} disabled={busy} onClick={() => { if (!id) { setMessages([]); setPersona(""); } void navigate({ to: "/chat" }); }} className="pill grid h-12 w-12 shrink-0 place-items-center rounded-full hover:bg-accent">
             <SquarePen className="h-5 w-5" />
           </Button>
         </header>
+        <div className="flex shrink-0 justify-end px-4"><ChatContextControls key={id || "new"} id={id} persona={persona} busy={busy || !contextReady} onPersona={async (value) => { if (id) { const result = await supabase.from("conversations").update({ persona: value }).eq("id", id); if (result.error) throw result.error; } setPersona(value); }} /></div>
 
-        <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) scrolling.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }} className="flex-1 overflow-y-auto overflow-x-hidden px-4">
+        <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) scrolling.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-6 pb-10 text-center">
               <ElvynLogo className="h-16 w-16" />
@@ -183,7 +191,7 @@ export function ChatView({ id }: { id?: string }) {
         </div>
 
         <div className="px-4 pb-5 pt-2">
-          <Composer onSend={send} busy={busy} />
+          <Composer onSend={send} busy={busy || !contextReady} />
         </div>
       </main>
     </div>
