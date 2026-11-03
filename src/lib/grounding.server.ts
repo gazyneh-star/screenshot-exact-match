@@ -62,6 +62,7 @@ export async function groundContext(contents: NativeContent[], instructions: str
     if (attempt === 0 && (upstream.status === 429 || upstream.status >= 500)) {
       const delay = Number(upstream.headers.get("retry-after"));
       await upstream.body?.cancel();
+      if (Number.isFinite(delay) && delay > 10) throw new AIRequestError(429, "Gemini is rate limited. Please wait before starting a fresh request.");
       await new Promise((resolve) => setTimeout(resolve, Number.isFinite(delay) && delay > 0 ? delay * 1000 : 1200));
       continue;
     }

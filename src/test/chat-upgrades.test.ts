@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { chainProviders, routeChat } from "@/lib/providers.server";
 import { SPEED_CHAIN, SMART_CHAIN, SMART_EXHAUSTED, systemInstructions } from "@/lib/chat-policy";
-import { nativeFilePart } from "@/lib/grounding.server";
+import { nativeFilePart, prepareNativeContents } from "@/lib/grounding.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { Buffer } from "node:buffer";
 
 vi.mock("@/lib/ai-access.server", () => ({
@@ -44,6 +46,19 @@ describe("Elvyn mode rules", () => {
   });
 });
 describe("Native visual input", () => {
+  it("includes a stored generated image in the subsequent native context and downloads its bytes", async () => {
+    const bytes = new Uint8Array([137,80,78,71,13,10,26,10]);
+    const download = vi.fn(async () => ({ data: new Blob([bytes]), error: null }));
+    const client = { storage: { from: () => ({ download }) } } as unknown as SupabaseClient<Database>;
+    const contents = await prepareNativeContents([{role:"assistant",content:"",image_path:"owner/chat/image.png",attachments:[]},{role:"user",content:"What did you draw?",attachments:[]}],client,"owner");
+    expect(download).toHaveBeenCalledWith("owner/chat/image.png");
+    expect(contents[0]?.parts[1]).toEqual({ inlineData: { mimeType:"image/png",data:Buffer.from(bytes).toString("base64") } });
+  });
+  it("does not fetch another user's file", async () => {
+    const download=vi.fn(); const client={storage:{from:()=>({download})}} as unknown as SupabaseClient<Database>;
+    await expect(prepareNativeContents([{role:"user",content:"see",attachments:[{name:"x",type:"image/png",path:"other/image.png"}]}],client,"owner")).rejects.toThrow("File access denied");
+    expect(download).not.toHaveBeenCalled();
+  });
   it("passes PNG bytes as native base64, not a URL", () => {
     const bytes = new Uint8Array([137,80,78,71,13,10,26,10]);
     expect(nativeFilePart(bytes,"image/png")).toEqual({ inlineData: { mimeType: "image/png", data: Buffer.from(bytes).toString("base64") } });

@@ -155,7 +155,7 @@ function SettingsPage() {
           <Group title={t.providersStatus}>
             <Button variant="outline" className="m-3 max-w-[90%] whitespace-normal h-auto" onClick={async () => {
               if (!confirm(t.resumeAI)) return;
-              const { error } = await supabase.from("ai_access_state").delete().in("scope", ["gateway", "lovable", "image", "gemini", "groq", "sambanova", "cloudflare", "together", "deepseek", "openrouter", "huggingface", "pollinations"]);
+              const { error } = await supabase.from("ai_access_state").delete().in("scope", ["gateway", "lovable", "image", "gemini", "groq", "cerebras", "sambanova", "cloudflare", "together", "deepseek", "openrouter", "orcarouter", "teamorouter", "tokenharbor", "huggingface", "pollinations"]);
               if (error) toast.error(error.message); else toast.success(t.saved);
             }}>{t.resumeAI}</Button>
             {status.data.providers.map((p) => (
