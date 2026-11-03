@@ -1,4 +1,5 @@
 const en = {
+  openImage: "Open image", imageUnavailable: "Could not load this image. Try again.", retry: "Try again", deleteChat: "Delete chat", confirmDeleteChat: "Delete this conversation? This cannot be undone.", cancel: "Cancel", searchQuota: "Web search is unavailable because your Gemini account has reached its quota. Wait for the quota to reset or review Gemini billing. You can turn Web Search off for a regular answer; live facts will not be verified.",
   speed: "Speed", smart: "Smart", persona: "Chat Persona & Description", personaHint: "Role and preferences for this conversation", shareChat: "Generate Chat Link/Code", shareWarning: "Anyone with this code can copy the frozen conversation, persona and files into their own private chat.", chatCode: "Chat code", generateCode: "Generate code", copy: "Copy", copied: "Copied", revoke: "Revoke code", joinChat: "Join/Fork Chat", responseLanguage: "Response Language",
   tools: "Tools", imagePrompt: "Describe an image…", download: "Download", fileLimit: "Files must be non-empty and under 20 MB.", attachmentLimit: "Attach up to 4 files.", save: "Save", displayName: "Display name", exportData: "Export chats", clearChats: "Delete all chats", confirmDelete: "Delete all your chats? This cannot be undone.", saved: "Saved", messages: "Messages", resumeAI: "Resume AI after restoring access",
   signIn: "Sign in",
@@ -53,6 +54,7 @@ const en = {
 };
 type D = typeof en;
 const ru: D = {
+  openImage: "Открыть изображение", imageUnavailable: "Не удалось загрузить изображение. Попробуйте ещё раз.", retry: "Повторить", deleteChat: "Удалить чат", confirmDeleteChat: "Удалить этот разговор? Это нельзя отменить.", cancel: "Отмена", searchQuota: "Веб-поиск недоступен: квота вашего аккаунта Gemini исчерпана. Дождитесь её обновления или проверьте оплату Gemini. Можно отключить веб-поиск для обычного ответа, но актуальные факты не будут проверены.",
   speed: "Быстро", smart: "Умно", persona: "Роль и описание чата", personaHint: "Роль и предпочтения для этого разговора", shareChat: "Создать ссылку/код чата", shareWarning: "Любой с этим кодом сможет скопировать разговор, роль и файлы в свой отдельный приватный чат.", chatCode: "Код чата", generateCode: "Создать код", copy: "Копировать", copied: "Скопировано", revoke: "Отозвать код", joinChat: "Присоединиться / создать ветку", responseLanguage: "Response Language",
   tools: "Инструменты", imagePrompt: "Опишите изображение…", download: "Скачать", fileLimit: "Файлы должны быть непустыми и меньше 20 МБ.", attachmentLimit: "Можно прикрепить до 4 файлов.", save: "Сохранить", displayName: "Имя", exportData: "Экспорт чатов", clearChats: "Удалить все чаты", confirmDelete: "Удалить все ваши чаты? Это нельзя отменить.", saved: "Сохранено", messages: "Сообщения", resumeAI: "Возобновить AI после восстановления доступа",
   signIn: "Войти",
@@ -106,6 +108,7 @@ const ru: D = {
   close: "Закрыть",
 };
 const ar: D = {
+  openImage: "فتح الصورة", imageUnavailable: "تعذر تحميل الصورة. حاول مرة أخرى.", retry: "حاول مرة أخرى", deleteChat: "حذف المحادثة", confirmDeleteChat: "حذف هذه المحادثة؟ لا يمكن التراجع.", cancel: "إلغاء", searchQuota: "بحث الويب غير متاح لأن حساب Gemini بلغ حصته. انتظر إعادة تعيين الحصة أو راجع فوترة Gemini. يمكنك إيقاف بحث الويب للحصول على إجابة عادية، لكن لن يتم التحقق من الحقائق الحالية.",
   speed: "سريع", smart: "ذكي", persona: "شخصية المحادثة ووصفها", personaHint: "الدور والتفضيلات لهذه المحادثة", shareChat: "إنشاء رابط/رمز المحادثة", shareWarning: "يمكن لأي شخص يملك الرمز نسخ المحادثة والشخصية والملفات إلى محادثته الخاصة المستقلة.", chatCode: "رمز المحادثة", generateCode: "إنشاء رمز", copy: "نسخ", copied: "تم النسخ", revoke: "إلغاء الرمز", joinChat: "الانضمام / تفريع المحادثة", responseLanguage: "Response Language",
   tools: "الأدوات", imagePrompt: "صف صورة…", download: "تنزيل", fileLimit: "الملفات يجب ألا تكون فارغة وأقل من 20 ميغابايت.", attachmentLimit: "أرفق حتى 4 ملفات.", save: "حفظ", displayName: "الاسم", exportData: "تصدير المحادثات", clearChats: "حذف جميع المحادثات", confirmDelete: "حذف جميع محادثاتك؟ لا يمكن التراجع.", saved: "تم الحفظ", messages: "الرسائل", resumeAI: "استئناف الذكاء الاصطناعي بعد استعادة الوصول",
   signIn: "تسجيل الدخول",
