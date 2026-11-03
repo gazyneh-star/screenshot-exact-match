@@ -9,7 +9,7 @@ export async function codeHash(code: string) {
   return Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 export const generateChatCode = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator(z.object({ conversationId: z.string().uuid() })).handler(async ({ data, context }) => {
-  const chat = await context.supabase.from("conversations").select("title,persona").eq("id", data.conversationId).single();
+  const chat = await context.supabase.from("conversations").select("title,persona").eq("id", data.conversationId).eq("user_id", context.userId).single();
   if (chat.error || !chat.data) throw new Error("Conversation not found.");
   const messages = await context.supabase.from("messages").select("role,content,provider,model,attachments,image_path").eq("conversation_id", data.conversationId).order("created_at").order("id");
   if (messages.error) throw new Error(messages.error.message);
