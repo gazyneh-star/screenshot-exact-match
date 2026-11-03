@@ -4,7 +4,7 @@
 - [x] Add independent response-language settings and warm system instructions.
 - [x] Add saved per-chat personas and secure, independent snapshot forks (signed-in end-to-end verification unavailable).
 - [x] Ground web-search answers in live evidence and the actual current date (live request blocked by Gemini quota).
-- [ ] Complete regression checks and report external blockers.
+- [x] Complete regression checks (19 passed; latest build OK) and report external blockers.
 - [ ] Verify Speed live completion (blocked: Groq rejected llama-3.3-70b-versatile for this account; no model substitution).
 - [ ] Verify live search completion (blocked: Gemini quota exceeded).
 - [ ] Verify complete mode configuration (Cerebras lacks configuration; Smart OpenRouter lacks a configured DeepSeek/Qwen model; Pollinations image model is not configured).
