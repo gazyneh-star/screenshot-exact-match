@@ -5,6 +5,7 @@ import { dict, type Lang } from "./i18n";
 import type { Attachment } from "./chat-schema";
 import { toast } from "sonner";
 import { responseLanguages, type ResponseLanguage } from "./chat-policy";
+import { deleteConversation } from "./chat-actions";
 
 export type Theme = "dark" | "light" | "system";
 export type Msg = { id: string; role: "user" | "assistant"; content: string; provider?: string | null; attachments?: Attachment[]; image_path?: string | null; imageSrc?: string | undefined; imageFinal?: boolean; error?: string };
@@ -24,7 +25,7 @@ type Store = {
   conversations: Conversation[];
   refresh: () => Promise<void>;
   rename: (id: string, title: string) => Promise<void>;
-  remove: (id: string) => Promise<void>;
+  remove: (id: string) => Promise<boolean>;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -104,9 +105,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           else setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, title } : c)));
         },
         remove: async (id) => {
-          const { error } = await supabase.from("conversations").delete().eq("id", id);
-          if (error) toast.error(error.message);
-          else setConversations((cs) => cs.filter((c) => c.id !== id));
+          try { await deleteConversation(id); setConversations((cs) => cs.filter((c) => c.id !== id)); return true; }
+          catch (error) { toast.error(error instanceof Error ? error.message : t.deleteChat); return false; }
         },
       }}
     >
