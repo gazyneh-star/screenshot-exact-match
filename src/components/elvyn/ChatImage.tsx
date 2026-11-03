@@ -15,7 +15,7 @@ export function ChatImage({ path, source, name, final = true }: { path?: string 
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string>();
   const [version, setVersion] = useState(0);
-  const objectUrl = useRef<string>();
+  const objectUrl = useRef<string | undefined>(undefined);
   useEffect(() => {
     let active = true;
     setError(undefined);

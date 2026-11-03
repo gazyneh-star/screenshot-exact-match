@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useServerFn } from "@tanstack/react-start";
 import { forkChatCode } from "@/lib/chat-sharing.functions";
 import { toast } from "sonner";
+import { DeleteChatButton } from "./DeleteChatButton";
 
 export function Sidebar({ open, onClose, activeId }: { open: boolean; onClose: () => void; activeId?: string }) {
   const { t, conversations, rename, remove, refresh } = useApp();
@@ -91,13 +92,7 @@ export function Sidebar({ open, onClose, activeId }: { open: boolean; onClose: (
               >
                 <Pencil className="h-4 w-4" />
               </button>
-              <button
-                aria-label={t.delete}
-                onClick={() => { void remove(c.id); if (c.id === activeId) go(null); }}
-                className="shrink-0 rounded-full p-1.5 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <DeleteChatButton id={c.id} onDeleted={() => { if (c.id === activeId) go(null); }} />
             </div>
           ))}
         </nav>

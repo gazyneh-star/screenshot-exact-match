@@ -16,6 +16,8 @@ import { attachmentSchema, type Attachment, type SendInput } from "@/lib/chat-sc
 import { cn } from "@/lib/utils";
 import { AttachmentView } from "./AttachmentView";
 import { ChatContextControls } from "./ChatContextControls";
+import { ChatImage } from "./ChatImage";
+import { DeleteChatButton } from "./DeleteChatButton";
 
 export function ChatView({ id }: { id?: string }) {
   const { t, refresh, model, user, responseLanguage } = useApp();
@@ -114,7 +116,7 @@ export function ChatView({ id }: { id?: string }) {
         provider = model === "pollinations" ? "Pollinations" : "Elvyn built-in";
       } else {
         const res = await fetch("/api/chat", { method: "POST", headers: { ...headers, "content-type": "application/json" }, body: JSON.stringify({ provider: model, mode, persona, responseLanguage, messages: history.filter((m) => m.content || m.attachments?.length || m.image_path).slice(-30).map(({ role, content, attachments, image_path }) => ({ role, content, image_path, attachments: attachments || [] })) }) });
-        if (!res.ok || !res.body) throw new Error((await res.text()) || t.aiError);
+        if (!res.ok || !res.body) { const reason = await res.text(); throw new Error(mode === "research" && res.status === 429 ? `${t.searchQuota}\n\n${reason}` : reason || t.aiError); }
         provider = res.headers.get("x-elvyn-provider"); chosenModel = res.headers.get("x-elvyn-model");
         const reader = res.body.getReader(); const decoder = new TextDecoder();
         let lastPaint = 0;
@@ -141,6 +143,7 @@ export function ChatView({ id }: { id?: string }) {
       const message = error instanceof Error ? error.message : t.aiError;
       toast.error(message);
       setMessages((ms) => ms.map((m) => m.id === draftId ? { ...m, error: message, imageSrc: undefined } : m));
+      if (persistedUser && convId && id !== convId && activeId.current === id) { skipLoad.current = convId; await navigate({ to: "/chat/$id", params: { id: convId } }); }
       if (!persistedUser) throw error;
     } finally { busyRef.current = false; setBusy(false); }
   };
@@ -160,7 +163,7 @@ export function ChatView({ id }: { id?: string }) {
             <SquarePen className="h-5 w-5" />
           </Button>
         </header>
-        <div className="flex shrink-0 justify-end px-4"><ChatContextControls key={id || "new"} id={id} persona={persona} busy={busy || !contextReady} onPersona={async (value) => { if (id) { const result = await supabase.from("conversations").update({ persona: value }).eq("id", id); if (result.error) throw result.error; } setPersona(value); }} /></div>
+        <div className="flex shrink-0 items-center justify-end px-4"><ChatContextControls key={id || "new"} id={id} persona={persona} busy={busy || !contextReady} onPersona={async (value) => { if (id) { const result = await supabase.from("conversations").update({ persona: value }).eq("id", id); if (result.error) throw result.error; } setPersona(value); }} />{id && <DeleteChatButton id={id} disabled={busy} onDeleted={() => { void navigate({ to: "/chat" }); }} />}</div>
 
         <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) scrolling.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4">
           {messages.length === 0 ? (
@@ -181,7 +184,7 @@ export function ChatView({ id }: { id?: string }) {
                   >
                     {m.content && (m.role === "user" ? <span className="whitespace-pre-wrap">{m.content}</span> : <div className="[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_img]:max-w-full [&_pre]:rounded-lg [&_pre]:bg-surface [&_pre]:p-3 [&_a]:text-brand [&_a]:underline [&_ul]:list-disc [&_ul]:ps-5"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown></div>)}
                     {m.attachments?.map((a) => <AttachmentView key={a.path} attachment={a} />)}
-                    {m.imageSrc && <div className="mt-2"><img src={m.imageSrc} alt={t.createImage} className={cn("max-h-96 w-full rounded-lg object-contain transition-[filter]", m.imageFinal ? "blur-0" : "blur-2xl")} />{m.imageFinal && <Button variant="link" asChild><a href={m.imageSrc} download="elvyn-image.png" target="_blank" rel="noreferrer">{t.download}</a></Button>}</div>}
+                    {(m.imageSrc || m.image_path) && <ChatImage path={m.image_path} source={m.imageSrc} name={m.image_path?.split("/").pop() || "elvyn-image.png"} final={Boolean(m.imageFinal)} />}
                     {m.error && <p role="alert" className="mt-2 text-destructive">{m.error}</p>}
                     {!m.content && !m.imageSrc && !m.error && busy && <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-brand motion-reduce:animate-none" />}
                   </div>

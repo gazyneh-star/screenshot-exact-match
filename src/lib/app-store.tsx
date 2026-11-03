@@ -106,7 +106,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         remove: async (id) => {
           try { await deleteConversation(id); setConversations((cs) => cs.filter((c) => c.id !== id)); return true; }
-          catch (error) { toast.error(error instanceof Error ? error.message : t.deleteChat); return false; }
+          catch (error) { toast.error(error instanceof Error ? error.message : dict[lang].deleteChat); return false; }
         },
       }}
     >
