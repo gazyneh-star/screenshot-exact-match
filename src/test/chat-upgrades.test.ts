@@ -48,7 +48,7 @@ describe("Elvyn mode rules", () => {
 describe("Native visual input", () => {
   it("includes a stored generated image in the subsequent native context and downloads its bytes", async () => {
     const bytes = new Uint8Array([137,80,78,71,13,10,26,10]);
-    const download = vi.fn(async () => ({ data: new Blob([bytes]), error: null }));
+    const download = vi.fn(async () => ({ data: { arrayBuffer: async () => bytes.buffer }, error: null }));
     const client = { storage: { from: () => ({ download }) } } as unknown as SupabaseClient<Database>;
     const contents = await prepareNativeContents([{role:"assistant",content:"",image_path:"owner/chat/image.png",attachments:[]},{role:"user",content:"What did you draw?",attachments:[]}],client,"owner");
     expect(download).toHaveBeenCalledWith("owner/chat/image.png");

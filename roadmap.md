@@ -1,10 +1,13 @@
 # Elvyn upgrades
-- [ ] Add dedicated Speed/Smart chains while preserving Auto and credentials.
-- [ ] Add native Gemini base64 vision, including generated-image context.
-- [ ] Add independent response-language settings and warm system instructions.
-- [ ] Add saved per-chat personas and secure, independent snapshot forks.
-- [ ] Ground web-search answers in live evidence and the actual current date.
-- [ ] Run regression tests and verify available live flows; report external blockers.
+- [x] Add dedicated Speed/Smart chains while preserving Auto and credentials.
+- [x] Add native Gemini base64 vision, including generated-image context (live known-image recognition verified).
+- [x] Add independent response-language settings and warm system instructions.
+- [x] Add saved per-chat personas and secure, independent snapshot forks (signed-in end-to-end verification unavailable).
+- [x] Ground web-search answers in live evidence and the actual current date (live request blocked by Gemini quota).
+- [ ] Complete regression checks and report external blockers.
+- [ ] Verify Speed live completion (blocked: Groq rejected llama-3.3-70b-versatile for this account; no model substitution).
+- [ ] Verify live search completion (blocked: Gemini quota exceeded).
+- [ ] Verify complete mode configuration (Cerebras lacks configuration; Smart OpenRouter lacks a configured DeepSeek/Qwen model; Pollinations image model is not configured).
 - [x] Repair provider selection and surface actionable connection errors.
 - [x] Reduce streaming render and scroll lag.
 - [x] Enable streamed image generation and saved images (live generation verified).
