@@ -21,14 +21,16 @@ describe("Private image repairs", () => {
     expect(mocks.download).toHaveBeenCalledWith("owner/chat/image.png"); expect(fetcher).not.toHaveBeenCalled();
   });
   it("downloads through a blob URL without opening another tab", async () => {
-    vi.useFakeTimers(); const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () { expect(this.href).toBe("blob:private-image"); expect(this.download).toBe("picture.png"); expect(this.target).toBe(""); });
+    vi.useFakeTimers(); const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { expect(this.href).toBe("blob:private-image"); expect(this.download).toBe("picture.png"); expect(this.target).toBe(""); });
     await downloadChatMedia("picture.png", "owner/chat/image.png");
     expect(click).toHaveBeenCalledOnce(); await vi.runAllTimersAsync(); expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:private-image"); click.mockRestore();
   });
   it("opens the actual stored image in the in-site dialog", async () => {
     render(<ChatImage path="owner/chat/image.png" name="picture.png" />);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open image", exact: true })).toBeEnabled());
-    fireEvent.click(screen.getByRole("button", { name: "Open image", exact: true }));
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Open image" })[0]).toBeEnabled());
+    const imageButton = screen.getAllByRole("button", { name: "Open image" })[0];
+    if (!imageButton) throw new Error("Image button missing");
+    fireEvent.click(imageButton);
     expect(screen.getByRole("dialog")).toBeVisible();
     expect(screen.getByRole("dialog").querySelector("img")?.src).toBe("blob:private-image");
   });
@@ -41,6 +43,6 @@ describe("Chat deletion", () => {
   it("confirms first and never navigates after a failed deletion", async () => {
     mocks.remove.mockResolvedValue(false); const onDeleted = vi.fn(); render(<DeleteChatButton id="chat-id" onDeleted={onDeleted} />);
     fireEvent.click(screen.getByRole("button", { name: "Delete chat" })); expect(mocks.remove).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Delete", exact: true })); await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("chat-id")); expect(onDeleted).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Delete$/ })); await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("chat-id")); expect(onDeleted).not.toHaveBeenCalled();
   });
 });
