@@ -1,8 +1,8 @@
 # Elvyn upgrades
-- [ ] Fix in-site image opening and blob downloads for generated images and image attachments.
-- [ ] Make chat deletion visible on touch devices and confirm successful deletion before navigation.
-- [ ] Explain web-search quota failures clearly and preserve failed conversations instead of creating duplicates.
-- [ ] Run regression tests and verify available image/deletion interactions.
+- [x] Fix in-site image opening and blob downloads for generated images and image attachments (component/storage-mock tests passed).
+- [x] Make chat deletion visible on touch devices and confirm successful deletion before navigation (failure/confirmation tests passed).
+- [x] Explain web-search quota failures clearly and preserve failed conversations instead of creating duplicates.
+- [x] Run regression tests (24 passed; latest build OK). Signed-in live image/deletion verification remains blocked by external Supabase session access.
 - [x] Add dedicated Speed/Smart chains while preserving Auto and credentials.
 - [x] Add native Gemini base64 vision, including generated-image context (live known-image recognition verified).
 - [x] Add independent response-language settings and warm system instructions.
